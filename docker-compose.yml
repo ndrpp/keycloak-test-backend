@@ -11,6 +11,15 @@ services:
       - KEYCLOAK_ADMIN_PASSWORD=admin
     command: start-dev
 
+      #go-server:
+      #  image: golang:1.22rc2-alpine
+      #  command: sh -c "go build -o go-server && ./go-server"
+      #  ports:
+      #    - 127.0.0.1:3000:3000
+      #  working_dir: /app
+      #  volumes:
+      #    - ./:/app
+
 networks:
   mm:
     driver: bridge
