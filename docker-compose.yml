@@ -1,11 +1,12 @@
 services:
   keycloak:
-    networks:
-      - mm
+    #networks:
+    #  - mm
+    network_mode: host
     ports:
-      - "8086:8080"
+      - 127.0.0.1:8080:8080
     container_name: keycloak
-    image: quay.io/keycloak/keycloak:23.0.4
+    image: quay.io/keycloak/keycloak:latest
     environment:
       - KEYCLOAK_ADMIN=admin
       - KEYCLOAK_ADMIN_PASSWORD=admin
@@ -13,9 +14,13 @@ services:
 
       #go-server:
       #  image: golang:1.22rc2-alpine
+      #  depends_on: 
+      #    - keycloak
+      #  networks:
+      #    - mm
       #  command: sh -c "go build -o go-server && ./go-server"
       #  ports:
-      #    - 127.0.0.1:3000:3000
+      #    - "8081:8081"
       #  working_dir: /app
       #  volumes:
       #    - ./:/app

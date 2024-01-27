@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	s := NewServer("localhost", "3000", newKeycloak())
+	s := NewServer("localhost", "8081", newKeycloak())
 	s.listen()
 
 	quit := make(chan os.Signal)

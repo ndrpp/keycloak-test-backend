@@ -3,11 +3,12 @@ package main
 import (
 	"context"
 	"encoding/json"
-	//"fmt"
-	//"io"
+	"fmt"
+	"io"
 	"net/http"
 	"time"
-	//"github.com/valyala/fastjson"
+
+	"github.com/valyala/fastjson"
 )
 
 type doc struct {
@@ -26,9 +27,9 @@ type loginRequest struct {
 }
 
 type loginResponse struct {
-	accessToken  string
-	refreshToken string
-	expiresIn    int
+	AccessToken  string `json:"accessToken"`
+	RefreshToken string `json:"refreshToken"`
+	ExpiresIn    int    `json:"expiresIn"`
 }
 
 func newController(keycloak *keycloak) *controller {
@@ -38,30 +39,30 @@ func newController(keycloak *keycloak) *controller {
 }
 
 func (c *controller) login(w http.ResponseWriter, r *http.Request) {
-	//rq := &loginRequest{}
-
-	//body, err := io.ReadAll(r.Body)
-	//fmt.Println("Received body on login...")
-	//if err != nil {
-	//	fmt.Println("Error reading request body: ", err)
-	//	http.Error(w, "Bad Request", http.StatusBadRequest)
-	//	return
-	//}
-	//var decoder fastjson.Parser
-
-	//value, err := decoder.ParseBytes(body)
-	//if err != nil {
-	//	http.Error(w, err.Error(), http.StatusBadRequest)
-	//}
-
-	//rq.username = string(value.GetStringBytes("username"))
-	//rq.password = string(value.GetStringBytes("password"))
 	rq := &loginRequest{}
-	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(rq); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+
+	body, err := io.ReadAll(r.Body)
+	fmt.Println("Received body on login...")
+	if err != nil {
+		fmt.Println("Error reading request body: ", err)
+		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return
 	}
+	var decoder fastjson.Parser
+
+	value, err := decoder.ParseBytes(body)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	}
+
+	rq.Username = string(value.GetStringBytes("username"))
+	rq.Password = string(value.GetStringBytes("password"))
+	//rq := &loginRequest{}
+	//decoder := json.NewDecoder(r.Body)
+	//if err := decoder.Decode(rq); err != nil {
+	//	http.Error(w, err.Error(), http.StatusBadRequest)
+	//	return
+	//}
 
 	jwt, err := c.keycloak.gocloak.Login(context.Background(),
 		c.keycloak.clientId,
@@ -74,18 +75,26 @@ func (c *controller) login(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusForbidden)
 		return
 	}
+	fmt.Println("jwt returned from login: ", jwt.AccessToken)
 
 	rs := &loginResponse{
-		accessToken:  jwt.AccessToken,
-		refreshToken: jwt.RefreshToken,
-		expiresIn:    jwt.ExpiresIn,
+		AccessToken:  jwt.AccessToken,
+		RefreshToken: jwt.RefreshToken,
+		ExpiresIn:    jwt.ExpiresIn,
 	}
 
-	rsJs, _ := json.Marshal(rs)
+	rsJs, err := json.Marshal(rs)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	fmt.Printf("rsJs: %s\n", rsJs)
 
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Length", fmt.Sprint(len(rsJs)))
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write(rsJs)
+	w.Write(rsJs)
+	w.(http.Flusher).Flush()
 }
 
 func (c *controller) getDocs(w http.ResponseWriter, r *http.Request) {

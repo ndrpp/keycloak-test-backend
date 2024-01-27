@@ -36,20 +36,26 @@ func (auth *keyCloakMiddleware) verifyToken(next http.Handler) http.Handler {
 			http.Error(w, "Bearer Token missing", http.StatusUnauthorized)
 			return
 		}
+		fmt.Println("extracted token: ", token)
 
 		result, err := auth.keycloak.gocloak.RetrospectToken(context.Background(), token, auth.keycloak.clientId, auth.keycloak.clientSecret, auth.keycloak.realm)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Invalid or malformed token: %s", err.Error()), http.StatusUnauthorized)
 			return
 		}
+		fmt.Println("Result from retrospect: ", result)
 
-		jwt, _, err := auth.keycloak.gocloak.DecodeAccessToken(context.Background(), token, auth.keycloak.realm, "")
+		jwt, _, err := auth.keycloak.gocloak.DecodeAccessToken(context.Background(), token, auth.keycloak.realm)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Invalid or malformed token: %s", err.Error()), http.StatusUnauthorized)
 			return
 		}
 
-		jwtj, _ := json.Marshal(jwt)
+		jwtj, err := json.Marshal(jwt)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to marshal jwt response: %s", err.Error()), http.StatusInternalServerError)
+			return
+		}
 		fmt.Printf("token: %v\n", string(jwtj))
 
 		if !*result.Active {
