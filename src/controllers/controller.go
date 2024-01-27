@@ -1,4 +1,4 @@
-package main
+package controllers
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/valyala/fastjson"
+	"keycloak-go-backend/src/services"
 )
 
 type doc struct {
@@ -17,8 +18,8 @@ type doc struct {
 	Date time.Time `json:"date"`
 }
 
-type controller struct {
-	keycloak *keycloak
+type Controller struct {
+	keycloak *services.Keycloak
 }
 
 type loginRequest struct {
@@ -32,13 +33,13 @@ type loginResponse struct {
 	ExpiresIn    int    `json:"expiresIn"`
 }
 
-func newController(keycloak *keycloak) *controller {
-	return &controller{
+func NewController(keycloak *services.Keycloak) *Controller {
+	return &Controller{
 		keycloak: keycloak,
 	}
 }
 
-func (c *controller) login(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) Login(w http.ResponseWriter, r *http.Request) {
 	rq := &loginRequest{}
 
 	body, err := io.ReadAll(r.Body)
@@ -57,17 +58,11 @@ func (c *controller) login(w http.ResponseWriter, r *http.Request) {
 
 	rq.Username = string(value.GetStringBytes("username"))
 	rq.Password = string(value.GetStringBytes("password"))
-	//rq := &loginRequest{}
-	//decoder := json.NewDecoder(r.Body)
-	//if err := decoder.Decode(rq); err != nil {
-	//	http.Error(w, err.Error(), http.StatusBadRequest)
-	//	return
-	//}
 
-	jwt, err := c.keycloak.gocloak.Login(context.Background(),
-		c.keycloak.clientId,
-		c.keycloak.clientSecret,
-		c.keycloak.realm,
+	jwt, err := c.keycloak.Gocloak.Login(context.Background(),
+		c.keycloak.ClientId,
+		c.keycloak.ClientSecret,
+		c.keycloak.Realm,
 		rq.Username,
 		rq.Password,
 	)
@@ -88,16 +83,13 @@ func (c *controller) login(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	fmt.Printf("rsJs: %s\n", rsJs)
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Content-Length", fmt.Sprint(len(rsJs)))
 	w.WriteHeader(http.StatusOK)
-	w.Write(rsJs)
-	w.(http.Flusher).Flush()
+	_, _ = w.Write(rsJs)
 }
 
-func (c *controller) getDocs(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) GetDocs(w http.ResponseWriter, r *http.Request) {
 	rs := []*doc{
 		{
 			Id:   "1",

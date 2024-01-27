@@ -1,26 +1,27 @@
-package main
+package middleware
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"keycloak-go-backend/src/services"
 	"net/http"
 	"strings"
 )
 
-type keyCloakMiddleware struct {
-	keycloak *keycloak
+type KeyCloakMiddleware struct {
+	Keycloak *services.Keycloak
 }
 
-func newMiddleware(keycloak *keycloak) *keyCloakMiddleware {
-	return &keyCloakMiddleware{keycloak: keycloak}
+func NewMiddleware(keycloak *services.Keycloak) *KeyCloakMiddleware {
+	return &KeyCloakMiddleware{Keycloak: keycloak}
 }
 
-func (auth *keyCloakMiddleware) extractBearerToken(token string) string {
+func (auth *KeyCloakMiddleware) extractBearerToken(token string) string {
 	return strings.Replace(token, "Bearer ", "", 1)
 }
 
-func (auth *keyCloakMiddleware) verifyToken(next http.Handler) http.Handler {
+func (auth *KeyCloakMiddleware) VerifyToken(next http.Handler) http.Handler {
 
 	f := func(w http.ResponseWriter, r *http.Request) {
 		token := r.Header.Get("Authorization")
@@ -36,16 +37,14 @@ func (auth *keyCloakMiddleware) verifyToken(next http.Handler) http.Handler {
 			http.Error(w, "Bearer Token missing", http.StatusUnauthorized)
 			return
 		}
-		fmt.Println("extracted token: ", token)
 
-		result, err := auth.keycloak.gocloak.RetrospectToken(context.Background(), token, auth.keycloak.clientId, auth.keycloak.clientSecret, auth.keycloak.realm)
+		result, err := auth.Keycloak.Gocloak.RetrospectToken(context.Background(), token, auth.Keycloak.ClientId, auth.Keycloak.ClientSecret, auth.Keycloak.Realm)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Invalid or malformed token: %s", err.Error()), http.StatusUnauthorized)
 			return
 		}
-		fmt.Println("Result from retrospect: ", result)
 
-		jwt, _, err := auth.keycloak.gocloak.DecodeAccessToken(context.Background(), token, auth.keycloak.realm)
+		jwt, _, err := auth.Keycloak.Gocloak.DecodeAccessToken(context.Background(), token, auth.Keycloak.Realm)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Invalid or malformed token: %s", err.Error()), http.StatusUnauthorized)
 			return
