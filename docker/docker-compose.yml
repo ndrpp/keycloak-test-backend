@@ -14,8 +14,9 @@ services:
 
       #go-server:
       #  image: golang:1.22rc2-alpine
+      #  container_name: go-server
       #  depends_on: 
-      #    - keycloak
+      #        - keycloak
       #  networks:
       #    - mm
       #  command: sh -c "go build -o go-server && ./go-server"
@@ -23,7 +24,7 @@ services:
       #    - "8081:8081"
       #  working_dir: /app
       #  volumes:
-      #    - ./:/app
+      #    - ../:/app
 
 networks:
   mm:

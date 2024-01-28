@@ -13,7 +13,7 @@ func NewKeycloak() *Keycloak {
 	return &Keycloak{
 		Gocloak:      gocloak.NewClient("http://127.0.0.1:8080"),
 		ClientId:     "my-go-service",
-		ClientSecret: "ZapjG4VaQf4bEBwCrFP0zhMVehP3jbh6",
+		ClientSecret: "FHiZ3R9lTRJXAl030htH4VQGLFIH7pJH",
 		Realm:        "go-test",
 	}
 }

@@ -43,7 +43,6 @@ func (c *Controller) Login(w http.ResponseWriter, r *http.Request) {
 	rq := &loginRequest{}
 
 	body, err := io.ReadAll(r.Body)
-	fmt.Println("Received body on login...")
 	if err != nil {
 		fmt.Println("Error reading request body: ", err)
 		http.Error(w, "Bad Request", http.StatusBadRequest)
@@ -70,7 +69,6 @@ func (c *Controller) Login(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusForbidden)
 		return
 	}
-	fmt.Println("jwt returned from login: ", jwt.AccessToken)
 
 	rs := &loginResponse{
 		AccessToken:  jwt.AccessToken,
