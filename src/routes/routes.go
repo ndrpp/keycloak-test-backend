@@ -9,11 +9,11 @@ import (
 
 func AddRoutes(
 	mux *http.ServeMux,
-    logger *utils.Logger,
+	logger *utils.Logger,
 	userController *controllers.UserController,
 ) {
 	mux.Handle("/login", userController.Login(logger))
-	mux.Handle("/docs", middleware.VerifyToken(userController.GetDocs(logger)))
+	mux.Handle("/docs", middleware.VerifyToken(logger, userController.GetDocs(logger)))
 	mux.Handle("/healthz", userController.HandleHealthZ(logger))
 	mux.Handle("/", http.NotFoundHandler())
 }

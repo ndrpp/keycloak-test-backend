@@ -13,8 +13,8 @@ import (
 )
 
 func main() {
-    config := src.Config{Host: "localhost", Port: "8081"}
-    logger := utils.NewLogger()
+	config := src.Config{Host: "localhost", Port: "8081"}
+	logger := utils.NewLogger()
 	err := godotenv.Load()
 	if err != nil {
 		fmt.Println("Error loading .env file")

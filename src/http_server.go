@@ -34,6 +34,6 @@ func NewServer(config Config, logger *utils.Logger, keycloak *services.Keycloak)
 }
 
 func Listen(s *http.Server, logger *utils.Logger) error {
-    logger.Info(fmt.Sprintf("Server is listening on: %s", s.Addr))
+	logger.Info(fmt.Sprintf("Server is listening on: %s", s.Addr))
 	return s.ListenAndServe()
 }

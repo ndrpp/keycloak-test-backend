@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"keycloak-go-backend/src/services"
+	"keycloak-go-backend/src/utils"
 	"net/http"
 	"strings"
 )
@@ -13,7 +14,7 @@ func extractBearerToken(token string) string {
 	return strings.Replace(token, "Bearer ", "", 1)
 }
 
-func VerifyToken(next http.Handler) http.Handler {
+func VerifyToken(logger *utils.Logger, next http.Handler) http.Handler {
 	Keycloak := *services.NewKeycloak()
 
 	return http.HandlerFunc(
@@ -44,12 +45,11 @@ func VerifyToken(next http.Handler) http.Handler {
 				return
 			}
 
-			jwtj, err := json.Marshal(jwt)
+			_, err = json.Marshal(jwt)
 			if err != nil {
 				http.Error(w, fmt.Sprintf("Failed to marshal jwt response: %s", err.Error()), http.StatusInternalServerError)
 				return
 			}
-			fmt.Printf("token: %v\n", string(jwtj))
 
 			if !*result.Active {
 				http.Error(w, "Invalid or expired Token", http.StatusUnauthorized)
