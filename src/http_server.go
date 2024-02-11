@@ -12,8 +12,8 @@ import (
 
 func NewServer(host, port string, keycloak *services.Keycloak) *http.Server {
 	mux := http.NewServeMux()
-	controller := controllers.NewController(keycloak)
-	routes.AddRoutes(mux, controller)
+	userController := controllers.NewUserController(keycloak)
+	routes.AddRoutes(mux, userController)
 	var handler http.Handler = mux
 	handler = middleware.CorsMiddeware(handler)
 

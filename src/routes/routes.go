@@ -8,10 +8,10 @@ import (
 
 func AddRoutes(
 	mux *http.ServeMux,
-	controller *controllers.Controller,
+	userController *controllers.UserController,
 ) {
-	mux.Handle("/login", controller.Login())
-	mux.Handle("/docs", middleware.VerifyToken(controller.GetDocs()))
-	mux.Handle("/healthz", controller.HandleHealthZ())
+	mux.Handle("/login", userController.Login())
+	mux.Handle("/docs", middleware.VerifyToken(userController.GetDocs()))
+	mux.Handle("/healthz", userController.HandleHealthZ())
 	mux.Handle("/", http.NotFoundHandler())
 }

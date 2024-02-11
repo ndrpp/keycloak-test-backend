@@ -2,14 +2,11 @@ package controllers
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
-	"io"
 	"net/http"
 	"time"
 
-	"github.com/valyala/fastjson"
 	"keycloak-go-backend/src/services"
+	"keycloak-go-backend/src/utils"
 )
 
 type doc struct {
@@ -18,7 +15,7 @@ type doc struct {
 	Date time.Time `json:"date"`
 }
 
-type Controller struct {
+type UserController struct {
 	keycloak *services.Keycloak
 }
 
@@ -33,32 +30,20 @@ type loginResponse struct {
 	ExpiresIn    int    `json:"expiresIn"`
 }
 
-func NewController(keycloak *services.Keycloak) *Controller {
-	return &Controller{
+func NewUserController(keycloak *services.Keycloak) *UserController {
+	return &UserController{
 		keycloak: keycloak,
 	}
 }
 
-func (c *Controller) Login() http.Handler {
+func (c *UserController) Login() http.Handler {
 	return http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			rq := &loginRequest{}
-
-			body, err := io.ReadAll(r.Body)
-			if err != nil {
-				fmt.Println("Error reading request body: ", err)
-				http.Error(w, "Bad Request", http.StatusBadRequest)
-				return
-			}
-			var decoder fastjson.Parser
-
-			value, err := decoder.ParseBytes(body)
+			rq, err := utils.Decode[*loginRequest](r)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 			}
-
-			rq.Username = string(value.GetStringBytes("username"))
-			rq.Password = string(value.GetStringBytes("password"))
 
 			jwt, err := c.keycloak.Gocloak.Login(context.Background(),
 				c.keycloak.ClientId,
@@ -77,20 +62,15 @@ func (c *Controller) Login() http.Handler {
 				RefreshToken: jwt.RefreshToken,
 				ExpiresIn:    jwt.ExpiresIn,
 			}
-
-			rsJs, err := json.Marshal(rs)
+			err = utils.Encode[*loginResponse](w, r, http.StatusOK, rs)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusOK)
-			_, _ = w.Write(rsJs)
 		})
 }
 
-func (c *Controller) GetDocs() http.Handler {
+func (c *UserController) GetDocs() http.Handler {
 	return http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			rs := []*doc{
@@ -106,22 +86,21 @@ func (c *Controller) GetDocs() http.Handler {
 				},
 			}
 
-			rsJs, _ := json.Marshal(rs)
-
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusOK)
-			_, _ = w.Write(rsJs)
-
+			err := utils.Encode[[]*doc](w, r, http.StatusOK, rs)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
 		})
 }
 
-func (c *Controller) HandleHealthZ() http.Handler {
+func (c *UserController) HandleHealthZ() http.Handler {
 	return http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusOK)
-
-			res, _ := json.Marshal("Alive and well.")
-			_, _ = w.Write(res)
+			err := utils.Encode[string](w, r, http.StatusOK, "Alive and well.")
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
 		})
 }
