@@ -36,7 +36,7 @@ func NewUserController(keycloak *services.Keycloak) *UserController {
 	}
 }
 
-func (c *UserController) Login() http.Handler {
+func (c *UserController) Login(logger *utils.Logger) http.Handler {
 	return http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			rq := &loginRequest{}
@@ -70,7 +70,7 @@ func (c *UserController) Login() http.Handler {
 		})
 }
 
-func (c *UserController) GetDocs() http.Handler {
+func (c *UserController) GetDocs(logger *utils.Logger) http.Handler {
 	return http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			rs := []*doc{
@@ -94,7 +94,7 @@ func (c *UserController) GetDocs() http.Handler {
 		})
 }
 
-func (c *UserController) HandleHealthZ() http.Handler {
+func (c *UserController) HandleHealthZ(logger *utils.Logger) http.Handler {
 	return http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			err := utils.Encode[string](w, r, http.StatusOK, "Alive and well.")
