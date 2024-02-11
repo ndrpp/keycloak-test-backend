@@ -9,61 +9,68 @@ import (
 	"strings"
 )
 
-type KeyCloakMiddleware struct {
-	Keycloak *services.Keycloak
-}
-
-func NewMiddleware(keycloak *services.Keycloak) *KeyCloakMiddleware {
-	return &KeyCloakMiddleware{Keycloak: keycloak}
-}
-
-func (auth *KeyCloakMiddleware) extractBearerToken(token string) string {
+func extractBearerToken(token string) string {
 	return strings.Replace(token, "Bearer ", "", 1)
 }
 
-func (auth *KeyCloakMiddleware) VerifyToken(next http.Handler) http.Handler {
+func VerifyToken(next http.Handler) http.Handler {
+	Keycloak := *services.NewKeycloak()
 
-	f := func(w http.ResponseWriter, r *http.Request) {
-		token := r.Header.Get("Authorization")
+	return http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			token := r.Header.Get("Authorization")
 
-		if token == "" {
-			http.Error(w, "Authorization header missing", http.StatusUnauthorized)
-			return
-		}
+			if token == "" {
+				http.Error(w, "Authorization header missing", http.StatusUnauthorized)
+				return
+			}
 
-		token = auth.extractBearerToken(token)
+			token = extractBearerToken(token)
 
-		if token == "" {
-			http.Error(w, "Bearer Token missing", http.StatusUnauthorized)
-			return
-		}
+			if token == "" {
+				http.Error(w, "Bearer Token missing", http.StatusUnauthorized)
+				return
+			}
 
-		result, err := auth.Keycloak.Gocloak.RetrospectToken(context.Background(), token, auth.Keycloak.ClientId, auth.Keycloak.ClientSecret, auth.Keycloak.Realm)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Invalid or malformed token: %s", err.Error()), http.StatusUnauthorized)
-			return
-		}
+			result, err := Keycloak.Gocloak.RetrospectToken(context.Background(), token, Keycloak.ClientId, Keycloak.ClientSecret, Keycloak.Realm)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Invalid or malformed token: %s", err.Error()), http.StatusUnauthorized)
+				return
+			}
 
-		jwt, _, err := auth.Keycloak.Gocloak.DecodeAccessToken(context.Background(), token, auth.Keycloak.Realm)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Invalid or malformed token: %s", err.Error()), http.StatusUnauthorized)
-			return
-		}
+			jwt, _, err := Keycloak.Gocloak.DecodeAccessToken(context.Background(), token, Keycloak.Realm)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Invalid or malformed token: %s", err.Error()), http.StatusUnauthorized)
+				return
+			}
 
-		jwtj, err := json.Marshal(jwt)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Failed to marshal jwt response: %s", err.Error()), http.StatusInternalServerError)
-			return
-		}
-		fmt.Printf("token: %v\n", string(jwtj))
+			jwtj, err := json.Marshal(jwt)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Failed to marshal jwt response: %s", err.Error()), http.StatusInternalServerError)
+				return
+			}
+			fmt.Printf("token: %v\n", string(jwtj))
 
-		if !*result.Active {
-			http.Error(w, "Invalid or expired Token", http.StatusUnauthorized)
+			if !*result.Active {
+				http.Error(w, "Invalid or expired Token", http.StatusUnauthorized)
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		})
+}
+
+func CorsMiddeware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With")
+
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
 			return
 		}
 
 		next.ServeHTTP(w, r)
-	}
-
-	return http.HandlerFunc(f)
+	})
 }

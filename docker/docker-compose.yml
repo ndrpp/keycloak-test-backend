@@ -1,8 +1,7 @@
 services:
   keycloak:
-    #networks:
-    #  - mm
-    network_mode: host
+    networks:
+      - mm
     ports:
       - 127.0.0.1:8080:8080
     container_name: keycloak
