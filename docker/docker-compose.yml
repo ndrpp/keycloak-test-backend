@@ -9,12 +9,13 @@ services:
     environment:
       - KEYCLOAK_ADMIN=admin
       - KEYCLOAK_ADMIN_PASSWORD=admin
-    command: start-dev
+    command:
+      start-dev
 
       #go-server:
       #  image: golang:1.22rc2-alpine
       #  container_name: go-server
-      #  depends_on: 
+      #  depends_on:
       #        - keycloak
       #  networks:
       #    - mm
