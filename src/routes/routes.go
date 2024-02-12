@@ -13,6 +13,8 @@ func AddRoutes(
 	userController *controllers.UserController,
 ) {
 	mux.Handle("/login", userController.Login(logger))
+	mux.Handle("/refreshToken", userController.RefreshToken(logger))
+	mux.Handle("/logout", userController.Logout(logger))
 	mux.Handle("/docs", middleware.VerifyToken(logger, userController.GetDocs(logger)))
 	mux.Handle("/healthz", userController.HandleHealthZ(logger))
 	mux.Handle("/", http.NotFoundHandler())

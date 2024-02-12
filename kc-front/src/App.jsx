@@ -104,6 +104,7 @@ function App() {
     try {
       console.log("called logout!");
       const accessToken = localStorage.getItem("accessToken");
+      const refreshToken = localStorage.getItem("refreshToken");
 
       const response = await fetch("http://localhost:8081/logout", {
         method: "POST",
@@ -113,6 +114,7 @@ function App() {
           Origin: "http://localhost:5173",
           Authorization: `Bearer ${accessToken}`,
         },
+        body: JSON.stringify({ refreshToken }),
       });
 
       if (response.status === 401) {

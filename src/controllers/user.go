@@ -24,6 +24,14 @@ type loginRequest struct {
 	Password string
 }
 
+type refreshTokenRequest struct {
+	RefreshToken string
+}
+
+type logoutRequest struct {
+	RefreshToken string
+}
+
 type loginResponse struct {
 	AccessToken  string `json:"accessToken"`
 	RefreshToken string `json:"refreshToken"`
@@ -63,6 +71,57 @@ func (c *UserController) Login(logger *utils.Logger) http.Handler {
 				ExpiresIn:    jwt.ExpiresIn,
 			}
 			err = utils.Encode[*loginResponse](w, r, http.StatusOK, rs)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		})
+}
+
+func (c *UserController) RefreshToken(logger *utils.Logger) http.Handler {
+	return http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			rq := &refreshTokenRequest{}
+			rq, err := utils.Decode[*refreshTokenRequest](r)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+			}
+
+			jwt, err := c.keycloak.Gocloak.RefreshToken(context.Background(), rq.RefreshToken, c.keycloak.ClientId, c.keycloak.ClientSecret, c.keycloak.Realm)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusForbidden)
+				return
+			}
+
+			rs := &loginResponse{
+				AccessToken:  jwt.AccessToken,
+				RefreshToken: jwt.RefreshToken,
+				ExpiresIn:    jwt.ExpiresIn,
+			}
+			err = utils.Encode[*loginResponse](w, r, http.StatusOK, rs)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		})
+}
+
+func (c *UserController) Logout(logger *utils.Logger) http.Handler {
+	return http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			rq := &logoutRequest{}
+			rq, err := utils.Decode[*logoutRequest](r)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+			}
+
+			err = c.keycloak.Gocloak.Logout(context.Background(), c.keycloak.ClientId, c.keycloak.ClientSecret, c.keycloak.Realm, rq.RefreshToken)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusForbidden)
+				return
+			}
+
+			err = utils.Encode[string](w, r, http.StatusOK, "Successfully logged out.")
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
